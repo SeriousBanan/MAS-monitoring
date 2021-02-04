@@ -21,6 +21,7 @@ class Coords:
 @dataclass
 class Arc:
     "Class of weighted arc to some vertex."
+
     to_vertex: "Vertex"
     weight: float
 
@@ -33,8 +34,7 @@ class Vertex:
     coords: Coords
     value: int = field(default=-1, hash=False)
     adjacent: Set["Vertex"] = field(default_factory=set, repr=False, hash=False)
-    # TODO: Remake dict to set of Arcs
-    arcs: Dict["Vertex", float] = field(default_factory=dict, repr=False, hash=False)
+    arcs: Set[Arc] = field(default_factory=set, repr=False, hash=False)
 
     def copy(self) -> "Vertex":
         "Return copy of the vertex without neighbors and arcs."
@@ -53,7 +53,8 @@ class Vertex:
         """
         Create arc to vertex.
         """
-        self.arcs[to_vertex] = weight
+        self.arcs.add(Arc(to_vertex=to_vertex,
+                          weight=weight))
 
 
 @dataclass
@@ -108,11 +109,12 @@ class Graph:
                     from_vertex.add_neighbor(to_vertex)
 
             if with_arcs:
-                for neighbor, weight in vertex.arcs.items():
+                for arc in vertex.arcs:
                     from_vertex = new_graph.vertexes[vertex.id_]
-                    to_vertex = new_graph.vertexes[neighbor.id_]
+                    to_vertex = new_graph.vertexes[arc.to_vertex.id_]
 
-                    from_vertex.add_arc(to_vertex, weight)
+                    from_vertex.add_arc(to_vertex=arc.to_vertex,
+                                        weight=arc.weight)
 
         return new_graph
 
