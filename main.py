@@ -47,7 +47,7 @@ def fill_global_values(cur_agent: Agent) -> None:
     for agent_id in range(AGENTS_COUNT):
         chanel_history = cur_agent.chanels_history[agent_id]
         while not chanel_history[-1].startswith("Values:"):
-            if chanel_history[-1] == "Global graph configuration finished":
+            if chanel_history[-1] == "Global graph configuration finished":  # TODO: fix this infinity loop.
                 chanel_history.pop()
             sleep(0.1)
 
@@ -104,6 +104,7 @@ def split_graph(cur_agent: Agent) -> None:
 
             else:
                 chanel_history = cur_agent.chanels_history[agent_id]
+                logger.debug(chanel_history[-5])
                 while not chanel_history[-1].startswith(f"Spliting step {spliting_step}:"):
                     sleep(0.1)
 
