@@ -1,15 +1,30 @@
+#!/usr/bin/env python
+
+"Main module of monitoring for agent"
+
 import json
-from typing import Iterable, Dict, Set
+from time import sleep
+import argparse
+from itertools import count
+from typing import Set
 from tools.objects import Agent, Graph, Vertex
-from tools.graph_generation import initialize_graph
+from tools import graph_generation
 from tools.setup_loggers import logger
+from tools import ros_comms
+
+AGENTS_INITIAL_POSITIONS = {
+    0: 0,
+    1: 20,
+    2: 24
+}
+AGENTS_COUNT = 3
 
 
-def fill_agent_values(agent: Agent) -> None:
+def fill_agent_values(cur_agent: Agent) -> None:
     "Filing values of vertexes in agent personal graph."
-    agent.graph = agent.global_graph.deepcopy()
+    cur_agent.graph = cur_agent.global_graph.deepcopy()
 
-    cur_vertex = agent.graph[agent.cur_position.id_]
+    cur_vertex = cur_agent.graph[cur_agent.cur_position.id_]
 
     cur_vertex.value = 0
     need_to_look = [cur_vertex]
@@ -22,69 +37,82 @@ def fill_agent_values(agent: Agent) -> None:
                 need_to_look.append(neighbor)
 
 
-def fill_global_values(global_graph: Graph, cur_agent: Agent, agents: Iterable[Agent]) -> None:
+def fill_global_values(cur_agent: Agent) -> None:
     "Filing values of vertexes in global graph"
-    for vertex in global_graph.vertexes.values():
+    global_graph = cur_agent.global_graph
+
+    for vertex in global_graph:
         vertex.value = 1
 
-    for agent in agents:
-        if agent is cur_agent:
-            values = map(lambda vetrex: (vetrex.id_, vetrex.value),
-                         agent.graph.vertexes.values())
-        else:
-            values = json.loads(agent.chanel[-1])
+    for agent_id in range(AGENTS_COUNT):
+        chanel_history = cur_agent.chanels_history[agent_id]
+        while not chanel_history[-1].startswith("Values:"):
+            sleep(0.1)
+
+        message_data = chanel_history[-1].lstrip("Values:")
+        values = json.loads(message_data)
 
         for vertex_id, value in values:
             global_vertex = global_graph.vertexes[vertex_id]
             global_vertex.value *= value
 
 
-def split_graph(global_graph: Graph, cur_agent: Agent, agents: Dict[int, Agent]) -> None:
+def split_graph(cur_agent: Agent) -> None:
     "Spliting global graph to subgraphs."
-    # TODO: Rewrite to single agent which waiting others after choosing.
-    # TODO: В цикле если не cur_agent ждать сообщения от других и редачить, иначе редачить и отправлять сообщение
 
-    not_selected_vertexes: Set[Vertex] = set(global_graph)
-    could_choose: Dict[int, Set[Vertex]] = {}
+    not_selected_vertexes: Set[Vertex] = set(cur_agent.global_graph)
+    could_choose: Set[Vertex] = set()
 
-    for agent in agents.values():
-        not_selected_vertexes.remove(agent.cur_position)
-        agent.graph = Graph()
+    cur_agent.graph = Graph()
+    cur_vertex = cur_agent.cur_position
 
-        cur_vertex = agent.cur_position
-        new_vertex = cur_vertex.copy()
+    new_vertex = cur_vertex.copy()
 
-        agent.cur_position = new_vertex
-        agent.graph.add_vertex(new_vertex)
+    cur_agent.cur_position = new_vertex
+    cur_agent.graph.add_vertex(new_vertex)
 
-        could_choose[agent.id_] = cur_vertex.adjacent.copy()
+    could_choose = cur_vertex.adjacent.copy()
 
-    while not_selected_vertexes:
-        for agent in agents.values():
-            could_choose[agent.id_].intersection_update(not_selected_vertexes)
-            if not could_choose[agent.id_]:
-                agent.post_to_chanel("Done")
-                continue
+    for spliting_step in count():
+        if not not_selected_vertexes:
+            break
 
-            chosen_vertex = max(could_choose[agent.id_],
-                                key=lambda vertex: (vertex.value, -(abs(vertex.coords.x - agent.cur_position.coords.x) +
-                                                                    abs(vertex.coords.y - agent.cur_position.coords.y))))
+        for agent_id in range(AGENTS_COUNT):
+            if agent_id == cur_agent.id_:
 
-            new_vertex = chosen_vertex.copy()
+                could_choose.intersection_update(not_selected_vertexes)
+                if not could_choose:
+                    cur_agent.post_to_chanel(f"Spliting step {spliting_step}:-1")
+                    continue
 
-            agent.graph.add_vertex(new_vertex)
-            not_selected_vertexes.remove(chosen_vertex)
+                chosen_vertex = max(could_choose, key=lambda vertex: (vertex.value, -(abs(vertex.coords.x - cur_vertex.coords.x) +
+                                                                                      abs(vertex.coords.y - cur_vertex.coords.y))))
+                new_vertex = chosen_vertex.copy()
 
-            for neighbor in chosen_vertex.adjacent:
-                if neighbor.id_ in agent.graph:
-                    new_vertex.add_neighbor(agent.graph[neighbor.id_])
-                else:
-                    could_choose[agent.id_].add(neighbor)
+                cur_agent.graph.add_vertex(new_vertex)
+                not_selected_vertexes.remove(chosen_vertex)
 
-            agent.post_to_chanel(f"{agent.id_} {chosen_vertex.id_}")
+                for neighbor in chosen_vertex.adjacent:
+                    if neighbor.id_ in cur_agent.graph:
+                        new_vertex.add_neighbor(cur_agent.graph[neighbor.id_])
+                    else:
+                        could_choose.add(neighbor)
+
+                cur_agent.post_to_chanel(f"Spliting step {spliting_step}:{chosen_vertex.id_}")
+
+            else:
+                chanel_history = cur_agent.chanels_history[agent_id]
+                while not chanel_history[-1].startswith(f"Spliting step {spliting_step}:"):
+                    sleep(0.1)
+
+                message_data = chanel_history[-1].lstrip(f"Spliting step {spliting_step}:")
+                chosen_vertex_id = int(message_data)
+
+                if chosen_vertex_id != -1:
+                    not_selected_vertexes.remove(cur_agent.global_graph[chosen_vertex_id])
 
 
-def calculate_arcs(cur_vertex: Vertex, not_checked: Set[Vertex]):
+def calculate_arcs(cur_vertex: Vertex, not_checked: Set[Vertex]) -> None:
     "Going through vertexes and calculating weights of arcs."
 
     def calculate_arc(from_vertex: Vertex, to_vertex: Vertex) -> float:
@@ -148,7 +176,7 @@ def walk_graph(agent: Agent) -> None:
     Walk prioritized through all vertexes in agent's graph.
     Agent always move to not checked vertex with maximum value.
     """
-    not_checked = set(agent.graph)
+    not_checked: Set[Vertex] = set(agent.graph)
     not_checked.remove(agent.cur_position)
 
     while not_checked:
@@ -163,56 +191,50 @@ def walk_graph(agent: Agent) -> None:
         recalculate_values(agent.cur_position, not_checked)
 
 
-def main(agent_id: int) -> None:
+def main(cur_agent_id: int) -> None:
     "Main function"
-    global_graph = initialize_graph("field vertexes.json")
+    global_graph = graph_generation.initialize_graph("field vertexes.json")
 
-    # TODO: move initial info about agents to config file.
+    cur_agent = Agent(id_=cur_agent_id,
+                      cur_position=global_graph[AGENTS_INITIAL_POSITIONS[cur_agent_id]],
+                      global_graph=global_graph,
+                      publisher_obj=ros_comms.initialize_publisher(cur_agent_id),
+                      chanels_history={agent_id: ros_comms.initialize_publisher_messages_history(agent_id)
+                                       for agent_id in range(AGENTS_COUNT)})
 
-    # TODO: change chanels.
-    agents = {
-        id_: Agent(id_=id_,
-                   chanel=[],
-                   global_graph=global_graph,
-                   cur_position=global_graph[position_id])
-        for id_, position_id in ((0, 0), (1, 20), (2, 24))
-    }
-    cur_agent = agents[agent_id]
+    cur_agent.post_to_chanel("Ready")
 
-    # TODO: remove loop.
-    for agent in agents.values():
-        fill_agent_values(agent)
+    for agent_id in range(AGENTS_COUNT):
+        chanel_history = cur_agent.chanels_history[agent_id]
+        while not chanel_history:
+            sleep(0.1)
 
-        message_data = list(map(lambda vetrex: (vetrex.id_, vetrex.value),
-                                agent.graph.vertexes.values()))
+    fill_agent_values(cur_agent)
 
-        agent.post_to_chanel(json.dumps(message_data))
+    message_data = list(map(lambda vertex: (vertex.id_, vertex.value),
+                            cur_agent.graph.vertexes.values()))
+    cur_agent.post_to_chanel("Values:" + json.dumps(message_data))
 
-    # TODO: add waiting until every one post info about it's values.
-
-    fill_global_values(global_graph, cur_agent, agents.values())
+    fill_global_values(cur_agent)
 
     # Each agent post "ok" to it's chanel after finishing
     # configuration global_graph
-    for agent in agents.values():
-        agent.post_to_chanel("ok")
+    cur_agent.post_to_chanel("Global graph configuration finished")
 
-    # TODO: delete this vvv.
-    # Симулируем пустоту новых сообщений.
-    for agent in agents.values():
-        agent.chanel = []
-    # TODO: delete this ^^^.
+    for agent_id in range(AGENTS_COUNT):
+        chanel_history = cur_agent.chanels_history[agent_id]
+        while chanel_history[-1] != "Global graph configuration finished":
+            sleep(0.1)
 
-    # TODO: Переделать.
-    # Костыль для начала выборов по кругу.
-    agents[2].post_to_chanel("ok")
+    split_graph(cur_agent)
 
-    # Spliting graph to subgraphs for each agent.
-    split_graph(global_graph, cur_agent, agents)
-
-    for agent in agents.values():
-        walk_graph(agent)
+    walk_graph(cur_agent)
 
 
 if __name__ == "__main__":
-    main(0)
+    parser = argparse.ArgumentParser(description="Start agent program.")
+    parser.add_argument("agent_id", type=int, help="ID of agent.")
+
+    args = parser.parse_args()
+
+    main(args.agent_id)

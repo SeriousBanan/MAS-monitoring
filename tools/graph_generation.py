@@ -102,9 +102,9 @@ def initialize_graph(file_name: str) -> Graph:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate graph and save it to file.")
-    parser.add_argument("--width", default=5, type=int, help="Field width")
-    parser.add_argument("--height", default=5, type=int, help="Field height")
-    parser.add_argument("--filename", default="field vertexes.json", help="Name of file where to save field")
+    parser.add_argument("--width", default=5, type=int, help="Field width.")
+    parser.add_argument("--height", default=5, type=int, help="Field height.")
+    parser.add_argument("--filename", default="field vertexes.json", help="Name of file where to save field.")
 
     args = parser.parse_args()
 

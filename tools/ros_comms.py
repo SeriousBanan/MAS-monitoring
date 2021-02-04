@@ -1,12 +1,11 @@
 "Commands for communicate with ROS."
 from math import pi
-from collections import defaultdict
 import rospy
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
 from gazebo_msgs.srv import GetModelState
 from tf.transformations import euler_from_quaternion
-from tools.setup_loggers import logger
+from tools.setup_loggers import logger as _logger
 
 # Turning angle accuracy
 _TURN_TOLERANCE = 0.1
@@ -15,7 +14,6 @@ _ANGLE_TOLERANCE = 0.05
 _CORRECTION_SPEED = 0.15
 
 
-# Turns left for 90 degrees
 def _left_turn(id_):
     "Left turn"
     pub = rospy.Publisher('part2_cmr/cmd_vel_' + str(id_), Twist, queue_size=1)
@@ -27,8 +25,8 @@ def _left_turn(id_):
     # Set publish rate at 10 Hz
     rate = rospy.Rate(10)
     begin_yaw = _get_yaw_angle('rosbots_' + str(id_), 'link')
-    logger.debug(f"{begin_yaw % (2 * pi)}")
-    logger.debug(f"{(begin_yaw + pi / 2) % (2 * pi)}")
+    _logger.debug(f"{begin_yaw % (2 * pi)}")
+    _logger.debug(f"{(begin_yaw + pi / 2) % (2 * pi)}")
 
     # Command in progress
     for _ in range(10):
@@ -43,19 +41,17 @@ def _left_turn(id_):
         pub.publish(move_cmd)
         rate.sleep()
 
-    logger.debug((_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw + pi / 2) % (2 * pi) - _TURN_TOLERANCE))
-                 or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw + pi / 2) % (2 * pi) + _TURN_TOLERANCE)))
-    logger.debug((begin_yaw - pi / 2) % (2 * pi) - _TURN_TOLERANCE)
-    logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi)}")
-    logger.debug((begin_yaw - pi / 2) % (2 * pi) + _TURN_TOLERANCE)
+    _logger.debug((_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw + pi / 2) % (2 * pi) - _TURN_TOLERANCE))
+                  or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw + pi / 2) % (2 * pi) + _TURN_TOLERANCE)))
+    _logger.debug((begin_yaw - pi / 2) % (2 * pi) - _TURN_TOLERANCE)
+    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi)}")
+    _logger.debug((begin_yaw - pi / 2) % (2 * pi) + _TURN_TOLERANCE)
 
     # Stopping after command is completed
     move_cmd.linear.x = 0.0
     move_cmd.angular.z = 0.0
     pub.publish(move_cmd)
     rate.sleep()
-
-# Turns right for 90 degrees
 
 
 def _right_turn(id_):
@@ -71,8 +67,8 @@ def _right_turn(id_):
     rate = rospy.Rate(10)
     begin_yaw = _get_yaw_angle('rosbots_' + str(id_), 'link')
 
-    logger.debug(f"{begin_yaw % (2 * pi)}")
-    logger.debug(f"{(begin_yaw - pi / 2) % (2 * pi)}")
+    _logger.debug(f"{begin_yaw % (2 * pi)}")
+    _logger.debug(f"{(begin_yaw - pi / 2) % (2 * pi)}")
 
     # Command in progress
     for _ in range(10):
@@ -84,12 +80,12 @@ def _right_turn(id_):
         pub.publish(move_cmd)
         rate.sleep()
 
-    logger.debug((_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw - pi / 2) % (2 * pi) - _TURN_TOLERANCE))
-                 or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw - pi / 2) % (2 * pi) + _TURN_TOLERANCE)))
-    logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi)}")
-    logger.debug(f"{(begin_yaw + pi / 2) % (2 * pi)}")
+    _logger.debug((_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw - pi / 2) % (2 * pi) - _TURN_TOLERANCE))
+                  or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw - pi / 2) % (2 * pi) + _TURN_TOLERANCE)))
+    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi)}")
+    _logger.debug(f"{(begin_yaw + pi / 2) % (2 * pi)}")
 
-    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link'))
+    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link'))
 
     # Stopping after command is completed
     move_cmd.linear.x = 0.0
@@ -118,9 +114,9 @@ def _move_forward(id_):
 
     line_coords = round(_get_coords('rosbots_' + str(id_))[1], None)
 
-    logger.debug(start_coord)
-    logger.debug(final_coord)
-    logger.debug(direction)
+    _logger.debug(start_coord)
+    _logger.debug(final_coord)
+    _logger.debug(direction)
 
     # Command in progress
     if direction == "up":
@@ -131,26 +127,26 @@ def _move_forward(id_):
                     2 * pi) / (pi / 2) - round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) > _ANGLE_TOLERANCE:
                 move_cmd.angular.z = -1 * _CORRECTION_SPEED
 
-                logger.debug("Correcting right.")
+                _logger.debug("Correcting right.")
                 if _get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') %
                     (2 * pi) / (pi / 2) - round(_get_yaw_angle('rosbots_' + str(id_), 'link') %
                                                 (2 * pi) / (pi / 2), None) > _ANGLE_TOLERANCE):
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
             elif (_get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE or
                   _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                   round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE):
                 move_cmd.angular.z = _CORRECTION_SPEED
 
-                logger.info("Correcting left.")
+                _logger.info("Correcting left.")
                 if _get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
                 if _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) - \
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE:
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
             else:
                 move_cmd.angular.z = 0.0
 
@@ -164,26 +160,26 @@ def _move_forward(id_):
                     2 * pi) / (pi / 2) - round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) > _ANGLE_TOLERANCE:
                 move_cmd.angular.z = -1 * _CORRECTION_SPEED
 
-                logger.debug("Correcting right.")
+                _logger.debug("Correcting right.")
                 if _get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) > _ANGLE_TOLERANCE):
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
 
             elif (_get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE or
                     _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                     round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE):
                 move_cmd.angular.z = _CORRECTION_SPEED
 
-                logger.debug("Correcting left.")
+                _logger.debug("Correcting left.")
                 if _get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE):
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
 
             else:
                 move_cmd.angular.z = 0.0
@@ -199,26 +195,26 @@ def _move_forward(id_):
                     2 * pi) / (pi / 2) - round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) > _ANGLE_TOLERANCE:
                 move_cmd.angular.z = -1 * _CORRECTION_SPEED
 
-                logger.debug("Correcting right.")
+                _logger.debug("Correcting right.")
                 if _get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) > _ANGLE_TOLERANCE):
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)))
 
             elif (_get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE or
                     _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                     round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) < -1 * _ANGLE_TOLERANCE):
                 move_cmd.angular.z = _CORRECTION_SPEED
 
-                logger.debug("Correcting left.")
+                _logger.debug("Correcting left.")
                 if _get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) < -1 * _ANGLE_TOLERANCE):
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)))
 
             else:
                 move_cmd.angular.z = 0.0
@@ -234,26 +230,26 @@ def _move_forward(id_):
                     2 * pi) / (pi / 2) - round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) > _ANGLE_TOLERANCE:
                 move_cmd.angular.z = -1 * _CORRECTION_SPEED
 
-                logger.debug("Correcting right.")
+                _logger.debug("Correcting right.")
                 if _get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE)
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) > _ANGLE_TOLERANCE):
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None))
 
             elif (_get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE or
                     _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                     round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) < -1 * _ANGLE_TOLERANCE):
                 move_cmd.angular.z = _CORRECTION_SPEED
 
-                logger.debug("Correcting left.")
+                _logger.debug("Correcting left.")
                 if _get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE:
-                    logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
+                    _logger.debug(_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE)
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) < -1 * _ANGLE_TOLERANCE):
-                    logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                 round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)))
+                    _logger.debug(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)))
 
             else:
                 move_cmd.angular.z = 0.0
@@ -284,8 +280,6 @@ def _get_yaw_angle(name, relative_entity_name):
     except rospy.ServiceException as exception:
         rospy.loginfo("Get Model State service call failed:  {0}".format(exception))
 
-# Returns x or y coord depending on the direction of movement
-
 
 def _get_coords(name):
     "Get cords"
@@ -308,8 +302,6 @@ def _get_coords(name):
         except rospy.ServiceException as exception:
             rospy.loginfo("Get Model State service call failed:  {0}".format(exception))
 
-# Returns direction of movement on the axis (positive direction of X is "top", and positive of Y is "left" )
-
 
 def _get_direction(name):
     "Get direction"
@@ -325,17 +317,6 @@ def _get_direction(name):
 
     elif round(_get_yaw_angle(name, 'link') % (2 * pi) / (pi / 2)) % 4 == 3:
         return "right"
-
-
-def _get_callback(id_):
-    "get callback"
-    def callback(data):
-        if data.data not in unique_messages[id_]:
-            unique_messages[id_].append(data.data)
-
-    return callback
-
-# Defines the sequence of commands based on given id_ and coordinates
 
 
 def move_agent(id_, x_start, y_start, x_end, y_end):
@@ -370,43 +351,30 @@ def move_agent(id_, x_start, y_start, x_end, y_end):
         _move_forward(id_)
 
 
-def send_message(id_, data):
+def initialize_publisher(publisher_id):
+    "Initialize publisher"
+    return rospy.Publisher(f"message_topic_{publisher_id}", String, queue_size=10)
+
+
+def initialize_publisher_messages_history(publisher_id):
+    "Initialize publisher messages history"
+    def callback(data):
+        if data.data not in messages_history:
+            messages_history.append(data.data)
+
+    messages_history = []
+
+    rospy.Subscriber(f"message_topic_{publisher_id}", String, callback)
+
+    return messages_history
+
+
+def send_message(publisher, data):
     "Send message"
     rate = rospy.Rate(100)
     for _ in range(10):
-        _messengers[id_].publish(data)
+        publisher.publish(data)
         rate.sleep()
 
 
-def _initialize_messengers():
-    "initialize messengers"
-
-    messengers = []
-
-    for id_ in range(3):
-        messenger = rospy.Publisher(f'message_topic_{id_}', String, queue_size=10)
-        messengers.append(messenger)
-
-    return messengers
-
-
-def _initialize_listeners():
-    "initialize listeners"
-
-    listeners = {}
-    for publisher_id in range(3):
-        for listener_id in range(3):
-            subscriber = rospy.Subscriber(f"message_topic_{publisher_id}", String, _get_callback(listener_id))
-            listeners[f"listener {listener_id} of {publisher_id}"] = subscriber
-
-    return listeners
-
-
 rospy.init_node('command_node', anonymous=True)
-
-# creating publishers
-_messengers = _initialize_messengers()
-unique_messages: dict = defaultdict(list)
-
-# creating listeners
-_listeners = _initialize_listeners()

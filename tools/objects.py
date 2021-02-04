@@ -3,30 +3,37 @@ Module with objects definitions.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Set, Iterator, Union
-from tools.setup_loggers import logger
+from typing import Dict, Set, Iterator, Union, List, Any
+from tools.setup_loggers import logger as _logger
+from tools import ros_comms as _ros_comms
+
+__all__ = ["Coords", "Vertex", "Graph", "Agent"]
 
 
 @dataclass(frozen=True)
 class Coords:
-    """
-    Class of coords for different objects.
-    """
+    "Class of coords for different objects."
 
     x: float
     y: float
 
 
+@dataclass
+class Arc:
+    "Class of weighted arc to some vertex."
+    to_vertex: "Vertex"
+    weight: float
+
+
 @dataclass(unsafe_hash=True)
 class Vertex:
-    """
-    Vertex class which contains it's id, coordinates, value and adjaced vertexes.
-    """
+    "Vertex class which contains it's id, coordinates, value and adjaced vertexes."
 
     id_: int
     coords: Coords
     value: int = field(default=-1, hash=False)
     adjacent: Set["Vertex"] = field(default_factory=set, repr=False, hash=False)
+    # TODO: Remake dict to set of Arcs
     arcs: Dict["Vertex", float] = field(default_factory=dict, repr=False, hash=False)
 
     def copy(self) -> "Vertex":
@@ -54,7 +61,11 @@ class Graph:
     """
     Graph class.
 
-    Support __setitem__, __getitem__, __iter__.
+    Support:
+    * __setitem__
+    * __getitem__
+    * __iter__
+    * __contains__ by vertex or vertex.id_.
     """
 
     vertexes: Dict[int, Vertex] = field(default_factory=dict)
@@ -127,27 +138,38 @@ class Agent:
     Agent class.
 
     Each agent contains:
-    * chanel to stream data
+    * id
     * his current position (In which Vertex)
     * link to global field
     * personal graph
+    * chanels with a history of messages from other agents
     """
 
     id_: int
-    chanel: Any
-    global_graph: Graph
     cur_position: Vertex
+    global_graph: Graph
     graph: Graph = field(default_factory=Graph)
+    publisher_obj: Any = None
+    chanels_history: Dict[int, List[str]] = field(default_factory=dict)
 
     def move_to(self, vertex: Vertex) -> None:
         "Moving agent to vertex."
 
-        logger.info(f"Agent {self.id_} moved to {vertex}")
+        _logger.info(f"Agent {self.id_} moved to {vertex}")
+        _ros_comms.move_agent(self.id_,
+                              self.cur_position.coords.x,
+                              self.cur_position.coords.y,
+                              vertex.coords.x,
+                              vertex.coords.y)
 
         self.cur_position = vertex
 
     def post_to_chanel(self, message: str) -> None:
         "Posting message to agent's chanel."
 
-        # TODO: change posting.
-        self.chanel.append(message)
+        _logger.info(f"Agent {self.id_} posted {message}")
+        _ros_comms.send_message(self.publisher_obj, message)
+
+
+del dataclass, field
+del Dict, Set, Iterator, Union, List, Any

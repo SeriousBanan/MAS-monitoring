@@ -65,3 +65,5 @@ logging.config.dictConfig(_logging_config)
 
 logger = logging.getLogger("logger")
 error_logger = logging.getLogger("error_logger")
+
+del os
