@@ -49,8 +49,8 @@ def fill_global_values(cur_agent: Agent) -> None:
         while not any(message.startswith("Values:") for message in chanel_history):
             sleep(0.01)
 
-        message = list(filter(lambda message: message.startswith("Values:"), chanel_history))[0]
-        message_data = message.lstrip("Values:")
+        message: str = list(filter(lambda message: message.startswith("Values:"), chanel_history))[0]
+        message_data = message.replace("Values:", "")
         values = json.loads(message_data)
 
         for vertex_id, value in values:
@@ -74,7 +74,25 @@ def split_graph(cur_agent: Agent) -> None:
 
     could_choose = cur_vertex.adjacent.copy()
 
-    for spliting_step in count():
+    cur_agent.post_to_chanel(f"Spliting step 0:{cur_vertex.id_}")
+
+    for agent_id in range(AGENTS_COUNT):
+        if agent_id == cur_agent.id_:
+            not_selected_vertexes.remove(cur_vertex)
+        else:
+            chanel_history = cur_agent.chanels_history[agent_id]
+
+            while not any(message.startswith("Spliting step 0:") for message in chanel_history):
+                sleep(0.01)
+
+            message = list(filter(lambda message: message.startswith("Spliting step 0:"), chanel_history))[0]
+
+            message_data = message.replace("Spliting step 0:", "")
+            start_vertex_id = int(message_data)
+
+            not_selected_vertexes.remove(cur_agent.global_graph[start_vertex_id])
+
+    for spliting_step in count(1):
         if not not_selected_vertexes:
             break
 
@@ -107,9 +125,12 @@ def split_graph(cur_agent: Agent) -> None:
                 while not any(message.startswith(f"Spliting step {spliting_step}:") for message in chanel_history):
                     sleep(0.01)
 
-                message = list(filter(lambda message: message.startswith(f"Spliting step {spliting_step}:"), chanel_history))[0]
+                def filter_func(message, spliting_step=spliting_step):
+                    return message.startswith(f"Spliting step {spliting_step}:")
 
-                message_data = message.lstrip(f"Spliting step {spliting_step}:")
+                message = list(filter(filter_func, chanel_history))[0]
+
+                message_data = message.replace(f"Spliting step {spliting_step}:", "")
                 chosen_vertex_id = int(message_data)
 
                 if chosen_vertex_id != -1:
@@ -198,6 +219,8 @@ def walk_graph(agent: Agent) -> None:
 def main(cur_agent_id: int) -> None:
     "Main function"
     global_graph = graph_generation.initialize_graph("field vertexes.json")
+    logger.debug(f"Global graph initialization completed.\n"
+                 f"\t{global_graph}")
 
     cur_agent = Agent(id_=cur_agent_id,
                       cur_position=global_graph[AGENTS_INITIAL_POSITIONS[cur_agent_id]],
@@ -206,20 +229,28 @@ def main(cur_agent_id: int) -> None:
                       chanels_history={agent_id: ros_comms.initialize_publisher_messages_history(agent_id)
                                        for agent_id in range(AGENTS_COUNT)})
 
+    logger.debug(f"Agent {cur_agent.id_} initialized:\n"
+                 f"\t{cur_agent}")
     cur_agent.post_to_chanel("Ready")
 
     for agent_id in range(AGENTS_COUNT):
         chanel_history = cur_agent.chanels_history[agent_id]
+        logger.debug(f"Agent {cur_agent.id_} begin waiting for initialization of the agent {agent_id}.")
         while not chanel_history:
             sleep(0.01)
+        logger.debug(f"Agent {cur_agent.id_} finish waiting for initialization of the agent {agent_id}.")
 
+    logger.debug(f"Agent {cur_agent.id_} begin initialization of values in his graph.")
     fill_agent_values(cur_agent)
+    logger.debug(f"Agent {cur_agent.id_} finish initialization of values in his graph.")
 
     message_data = list(map(lambda vertex: (vertex.id_, vertex.value),
                             cur_agent.graph.vertexes.values()))
     cur_agent.post_to_chanel("Values:" + json.dumps(message_data))
 
+    logger.debug(f"Agent {cur_agent.id_} begin initialization of values in the global graph.")
     fill_global_values(cur_agent)
+    logger.debug(f"Agent {cur_agent.id_} finish initialization of values in the global graph.")
 
     # Each agent post "Global graph configuration finished" to it's chanel after finishing
     # configuration global_graph
