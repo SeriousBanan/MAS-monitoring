@@ -46,12 +46,11 @@ def fill_global_values(cur_agent: Agent) -> None:
 
     for agent_id in range(AGENTS_COUNT):
         chanel_history = cur_agent.chanels_history[agent_id]
-        while not chanel_history[-1].startswith("Values:"):
-            if chanel_history[-1] == "Global graph configuration finished":  # TODO: fix this infinity loop.
-                chanel_history.pop()
-            sleep(0.1)
+        while not any(message.startswith("Values:") for message in chanel_history):
+            sleep(0.01)
 
-        message_data = chanel_history[-1].lstrip("Values:")
+        message = list(filter(lambda message: message.startswith("Values:"), chanel_history))[0]
+        message_data = message.lstrip("Values:")
         values = json.loads(message_data)
 
         for vertex_id, value in values:
@@ -104,11 +103,13 @@ def split_graph(cur_agent: Agent) -> None:
 
             else:
                 chanel_history = cur_agent.chanels_history[agent_id]
-                logger.debug(chanel_history[-5])
-                while not chanel_history[-1].startswith(f"Spliting step {spliting_step}:"):
-                    sleep(0.1)
 
-                message_data = chanel_history[-1].lstrip(f"Spliting step {spliting_step}:")
+                while not any(message.startswith(f"Spliting step {spliting_step}:") for message in chanel_history):
+                    sleep(0.01)
+
+                message = list(filter(lambda message: message.startswith(f"Spliting step {spliting_step}:"), chanel_history))[0]
+
+                message_data = message.lstrip(f"Spliting step {spliting_step}:")
                 chosen_vertex_id = int(message_data)
 
                 if chosen_vertex_id != -1:
@@ -210,7 +211,7 @@ def main(cur_agent_id: int) -> None:
     for agent_id in range(AGENTS_COUNT):
         chanel_history = cur_agent.chanels_history[agent_id]
         while not chanel_history:
-            sleep(0.1)
+            sleep(0.01)
 
     fill_agent_values(cur_agent)
 
@@ -220,14 +221,15 @@ def main(cur_agent_id: int) -> None:
 
     fill_global_values(cur_agent)
 
-    # Each agent post "ok" to it's chanel after finishing
+    # Each agent post "Global graph configuration finished" to it's chanel after finishing
     # configuration global_graph
     cur_agent.post_to_chanel("Global graph configuration finished")
 
     for agent_id in range(AGENTS_COUNT):
         chanel_history = cur_agent.chanels_history[agent_id]
-        while chanel_history[-1] != "Global graph configuration finished":
-            sleep(0.1)
+
+        while "Global graph configuration finished" not in chanel_history:
+            sleep(0.01)
 
     split_graph(cur_agent)
 
