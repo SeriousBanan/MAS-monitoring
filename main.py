@@ -239,6 +239,7 @@ def main(cur_agent_id: int) -> None:
         logger.debug(f"Agent {cur_agent.id_} begin waiting for initialization of the agent {agent_id}.")
         while not chanel_history:
             sleep(0.01)
+            cur_agent.post_to_chanel("Ready")
         logger.debug(f"Agent {cur_agent.id_} finish waiting for initialization of the agent {agent_id}.")
 
     logger.debug(f"Agent {cur_agent.id_} begin initialization of values in his graph.")
