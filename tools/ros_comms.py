@@ -325,11 +325,11 @@ def move_agent(id_, x_start, y_start, x_end, y_end):
     x_diff = x_end - x_start
     y_diff = y_end - y_start
 
-    if x_diff > 0 and y_diff == 0:
+    if y_diff > 0 and x_diff == 0:
         cmd_direction = "up"
-    elif x_diff < 0 and y_diff == 0:
+    elif y_diff < 0 and x_diff == 0:
         cmd_direction = "down"
-    elif x_diff == 0 and y_diff > 0:
+    elif y_diff == 0 and x_diff < 0:
         cmd_direction = "left"
     else:
         cmd_direction = "right"
@@ -338,12 +338,12 @@ def move_agent(id_, x_start, y_start, x_end, y_end):
 
     if direction == cmd_direction:
         _move_forward(id_)
-    elif ((direction == "top" and cmd_direction == "right") or (direction == "right" and cmd_direction == "down") or
-            (direction == "down" and cmd_direction == "left") or (direction == "left" and cmd_direction == "top")):
+    elif ((direction == "up" and cmd_direction == "right") or (direction == "right" and cmd_direction == "down") or
+            (direction == "down" and cmd_direction == "left") or (direction == "left" and cmd_direction == "up")):
         _right_turn(id_)
         _move_forward(id_)
-    elif ((direction == "top" and cmd_direction == "left") or (direction == "left" and cmd_direction == "down") or
-            (direction == "down" and cmd_direction == "right") or (direction == "right" and cmd_direction == "top")):
+    elif ((direction == "up" and cmd_direction == "left") or (direction == "left" and cmd_direction == "down") or
+            (direction == "down" and cmd_direction == "right") or (direction == "right" and cmd_direction == "up")):
         _left_turn(id_)
         _move_forward(id_)
     else:
