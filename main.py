@@ -153,10 +153,11 @@ def calculate_arcs(cur_vertex: Vertex, not_checked: Set[Vertex]) -> None:
         path.remove(to_vertex)
 
         if to_vertex in not_checked:
-            weight = to_vertex.value - from_vertex.value + 2 * max([0, *to_vertex.arcs.values()]) - sum(to_vertex.arcs.values()) + 1
+            weight = to_vertex.value - from_vertex.value + 2 * \
+                max([0, *map(lambda arc: arc.weight, to_vertex.arcs)]) - sum(map(lambda arc: arc.weight, to_vertex.arcs)) + 1
 
         else:
-            weight = max([float("-inf"), *to_vertex.arcs.values()]) - 1
+            weight = max([float("-inf"), *map(lambda arc: arc.weight, to_vertex.arcs)]) - 1
 
         logger.debug(f"Created arc \n"
                      f"\tfrom {from_vertex}\n"
@@ -181,7 +182,7 @@ def recalculate_values(cur_vertex: Vertex, not_checked: Set[Vertex]) -> None:
 
     while need_to_look:
         cur_vertex, depth = need_to_look.pop(0)
-        cur_vertex.arcs = {}
+        cur_vertex.arcs = set()
         for neighbor in cur_vertex.adjacent:
             if neighbor in recalculated:
                 continue
@@ -208,7 +209,7 @@ def walk_graph(agent: Agent) -> None:
         calculate_arcs(agent.cur_position, not_checked)
 
         while agent.cur_position.arcs:
-            new_position = max(agent.cur_position.arcs.items(), key=lambda arc: arc[1])[0]
+            new_position = max(agent.cur_position.arcs, key=lambda arc: arc.weight).to_vertex
             if new_position in not_checked:
                 not_checked.remove(new_position)
             agent.move_to(new_position)
