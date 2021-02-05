@@ -416,7 +416,7 @@
 	    <wheelDiameter>0.52</wheelDiameter>
 	    <wheelAcceleration>1.0</wheelAcceleration>
 	    <torque>20</torque>
-	    <commandTopic>/part2_cmr/cmd_vel_2</commandTopic>
+	    <commandTopic>/part2_cmr/cmd_vel_1</commandTopic>
 	    <odometryTopic>odom</odometryTopic>
 	    <odometryFrame>odom</odometryFrame>
 	    <robotBaseFrame>base_link</robotBaseFrame>
