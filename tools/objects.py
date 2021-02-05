@@ -18,7 +18,7 @@ class Coords:
     y: float
 
 
-@dataclass
+@dataclass(frozen=True)
 class Arc:
     "Class of weighted arc to some vertex."
 
