@@ -41,31 +41,31 @@ def _left_turn(id_):
         pub.publish(move_cmd)
         rate.sleep()
 
-    _logger.debug(f"{(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw + pi / 2) % (2 * pi) - _TURN_TOLERANCE)}")
-                  or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw + pi / 2) % (2 * pi) + _TURN_TOLERANCE)))
+    _logger.debug(str((_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw + pi / 2) % (2 * pi) - _TURN_TOLERANCE))
+                      or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw + pi / 2) % (2 * pi) + _TURN_TOLERANCE))))
     _logger.debug(f"{(begin_yaw - pi / 2) % (2 * pi) - _TURN_TOLERANCE}")
     _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi)}")
     _logger.debug(f"{(begin_yaw - pi / 2) % (2 * pi) + _TURN_TOLERANCE}")
 
     # Stopping after command is completed
-    move_cmd.linear.x=0.0
-    move_cmd.angular.z=0.0
+    move_cmd.linear.x = 0.0
+    move_cmd.angular.z = 0.0
     pub.publish(move_cmd)
     rate.sleep()
 
 
 def _right_turn(id_):
     "Right turn"
-    pub=rospy.Publisher('part2_cmr/cmd_vel_' + str(id_), Twist, queue_size = 1)
-    rospy.init_node('command_node', anonymous = True)
+    pub = rospy.Publisher('part2_cmr/cmd_vel_' + str(id_), Twist, queue_size=1)
+    rospy.init_node('command_node', anonymous=True)
 
     # Create a Twist message and add linear x and angular z values
-    move_cmd=Twist()
-    move_cmd.angular.z=-0.6
+    move_cmd = Twist()
+    move_cmd.angular.z = -0.6
 
     # Set publish rate at 100 Hz
-    rate=rospy.Rate(10)
-    begin_yaw=_get_yaw_angle('rosbots_' + str(id_), 'link')
+    rate = rospy.Rate(10)
+    begin_yaw = _get_yaw_angle('rosbots_' + str(id_), 'link')
 
     _logger.debug(f"{begin_yaw % (2 * pi)}")
     _logger.debug(f"{(begin_yaw - pi / 2) % (2 * pi)}")
@@ -80,8 +80,8 @@ def _right_turn(id_):
         pub.publish(move_cmd)
         rate.sleep()
 
-    _logger.debug(f"{(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw - pi / 2) % (2 * pi) - _TURN_TOLERANCE)}")
-                  or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw - pi / 2) % (2 * pi) + _TURN_TOLERANCE)))
+    _logger.debug(str((_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) < ((begin_yaw - pi / 2) % (2 * pi) - _TURN_TOLERANCE))
+                      or (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) > ((begin_yaw - pi / 2) % (2 * pi) + _TURN_TOLERANCE))))
     _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi)}")
     _logger.debug(f"{(begin_yaw + pi / 2) % (2 * pi)}")
 
@@ -133,8 +133,8 @@ def _move_forward(id_):
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') %
                     (2 * pi) / (pi / 2) - round(_get_yaw_angle('rosbots_' + str(id_), 'link') %
                                                 (2 * pi) / (pi / 2), None) > _ANGLE_TOLERANCE):
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)}")
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)))
             elif (_get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE or
                   _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                   round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE):
@@ -143,10 +143,10 @@ def _move_forward(id_):
                 _logger.info("Correcting left.")
                 if _get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE:
                     _logger.debug(f"{_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE}")
-                if _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) - \
-                        round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE:
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)}")
+                if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                        round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE):
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)))
             else:
                 move_cmd.angular.z = 0.0
 
@@ -165,8 +165,8 @@ def _move_forward(id_):
                     _logger.debug(f"{_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE}")
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) > _ANGLE_TOLERANCE):
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)}")
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)))
 
             elif (_get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE or
                     _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
@@ -178,8 +178,8 @@ def _move_forward(id_):
                     _logger.debug(f"{_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE}")
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None) < -1 * _ANGLE_TOLERANCE):
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)}")
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)))
 
             else:
                 move_cmd.angular.z = 0.0
@@ -200,8 +200,8 @@ def _move_forward(id_):
                     _logger.debug(f"{_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE}")
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) > _ANGLE_TOLERANCE):
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2))}")
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2))))
 
             elif (_get_coords('rosbots_' + str(id_))[1] > line_coords + _ROAD_TOLERANCE or
                     _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
@@ -213,8 +213,8 @@ def _move_forward(id_):
                     _logger.debug(f"{_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE}")
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) < -1 * _ANGLE_TOLERANCE):
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2))}")
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2))))
 
             else:
                 move_cmd.angular.z = 0.0
@@ -235,8 +235,8 @@ def _move_forward(id_):
                     _logger.debug(f"{_get_coords('rosbots_' + str(id_))[1], line_coords + _ROAD_TOLERANCE}")
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) > _ANGLE_TOLERANCE):
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)}")
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2), None)))
 
             elif (_get_coords('rosbots_' + str(id_))[1] < line_coords - _ROAD_TOLERANCE or
                     _get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
@@ -248,8 +248,8 @@ def _move_forward(id_):
                     _logger.debug(f"{_get_coords('rosbots_' + str(id_))[1], line_coords - _ROAD_TOLERANCE}")
                 if (_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
                         round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2)) < -1 * _ANGLE_TOLERANCE):
-                    _logger.debug(f"{_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
-                                  round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2))}")
+                    _logger.debug(str(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2) -
+                                      round(_get_yaw_angle('rosbots_' + str(id_), 'link') % (2 * pi) / (pi / 2))))
 
             else:
                 move_cmd.angular.z = 0.0
@@ -306,17 +306,18 @@ def _get_coords(name):
 def _get_direction(name):
     "Get direction"
 
-    if round(_get_yaw_angle(name, 'link') % (2 * pi) / (pi / 2)) % 4 == 0:
+    direction = round(_get_yaw_angle(name, 'link') % (2 * pi) / (pi / 2)) % 4
+
+    if direction == 0:
         return "up"
 
-    elif round(_get_yaw_angle(name, 'link') % (2 * pi) / (pi / 2)) % 4 == 1:
+    if direction == 1:
         return "left"
 
-    elif round(_get_yaw_angle(name, 'link') % (2 * pi) / (pi / 2)) % 4 == 2:
+    if direction == 2:
         return "down"
 
-    elif round(_get_yaw_angle(name, 'link') % (2 * pi) / (pi / 2)) % 4 == 3:
-        return "right"
+    return "right"
 
 
 def move_agent(id_, x_start, y_start, x_end, y_end):
@@ -337,12 +338,12 @@ def move_agent(id_, x_start, y_start, x_end, y_end):
 
     if direction == cmd_direction:
         _move_forward(id_)
-    elif (direction == "top" and cmd_direction == "right") or (direction == "right" and cmd_direction == "down") or \
-            (direction == "down" and cmd_direction == "left") or (direction == "left" and cmd_direction == "top"):
+    elif ((direction == "top" and cmd_direction == "right") or (direction == "right" and cmd_direction == "down") or
+            (direction == "down" and cmd_direction == "left") or (direction == "left" and cmd_direction == "top")):
         _right_turn(id_)
         _move_forward(id_)
-    elif (direction == "top" and cmd_direction == "left") or (direction == "left" and cmd_direction == "down") or \
-            (direction == "down" and cmd_direction == "right") or (direction == "right" and cmd_direction == "top"):
+    elif ((direction == "top" and cmd_direction == "left") or (direction == "left" and cmd_direction == "down") or
+            (direction == "down" and cmd_direction == "right") or (direction == "right" and cmd_direction == "top")):
         _left_turn(id_)
         _move_forward(id_)
     else:
