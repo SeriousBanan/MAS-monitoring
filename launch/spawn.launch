@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <param name="robot_description_1" command="cat '$(find algorithm_simulation)/urdf/rosbots_1.xacro'" />
- 
     <arg name="x" default="6"/>
     <arg name="y" default="-3"/>
     <arg name="z" default="0.5"/>
+
+    <param name="robot_description_0" command="cat '$(find MAS-monitoring)/urdf/rosbots_0.xacro'" />
+ 
+    <node name="mybot_spawn_0" pkg="gazebo_ros" type="spawn_model" output="screen"
+          args="-urdf -param robot_description_0 -model rosbots_0 -x -4 -y 4 -z 0.5" /> 
+    
+    <param name="robot_description_1" command="cat '$(find MAS-monitoring)/urdf/rosbots_1.xacro'" />
  
     <node name="mybot_spawn_1" pkg="gazebo_ros" type="spawn_model" output="screen"
-          args="-urdf -param robot_description_1 -model rosbots_1 -x -4 -y 4 -z 0.5" /> 
-    
-    <param name="robot_description_2" command="cat '$(find algorithm_simulation)/urdf/rosbots_2.xacro'" />
+          args="-urdf -param robot_description_1 -model rosbots_1 -x -4 -y -4 -z 0.5" /> 
+          
+    <param name="robot_description_2" command="cat '$(find MAS-monitoring)/urdf/rosbots_2.xacro'" />
+ 
  
     <node name="mybot_spawn_2" pkg="gazebo_ros" type="spawn_model" output="screen"
-          args="-urdf -param robot_description_2 -model rosbots_2 -x -4 -y -4 -z 0.5" /> 
-          
-    <param name="robot_description_3" command="cat '$(find algorithm_simulation)/urdf/rosbots_3.xacro'" />
- 
- 
-    <node name="mybot_spawn_3" pkg="gazebo_ros" type="spawn_model" output="screen"
-          args="-urdf -param robot_description_3 -model rosbots_3 -x 4 -y -4 -z 0.5" /> 
+          args="-urdf -param robot_description_2 -model rosbots_2 -x 4 -y -4 -z 0.5" /> 
 </launch>
